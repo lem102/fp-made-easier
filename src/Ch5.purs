@@ -1,6 +1,6 @@
 module Ch5 where
     
-import Prelude (Unit, (+), show, discard)
+import Prelude (Unit, (+), (-), (<), show, discard, negate)
 
 import Effect (Effect)
 import Effect.Console (log)
@@ -65,6 +65,14 @@ uncons :: ∀ a. List a -> Maybe { head :: a, tail :: List a }
 uncons Nil = Nothing
 uncons (x : xs) = Just { head: x, tail: xs}
 
+index :: ∀ a. List a -> Int -> Maybe a
+index Nil _ = Nothing
+index _ i | i < 0 = Nothing
+index (x : _) 0 = Just x
+index (_ : xs) i = index xs (i - 1)
+
+infixl 8 index as !!
+
 test :: Effect Unit
 test = do
   log "test - const"
@@ -96,3 +104,10 @@ test = do
   log $ show $ init (1 : 2 : 3 : Nil)
   log "test - uncons"
   log $ show $ uncons (1 : 2 : 3 : Nil)
+  log "test - index"
+  log $ show $ index (1 : Nil) 4
+  log $ show $ index (1 : 2 : 3 : Nil) 1
+  log $ show $ index (Nil :: List Unit) 0
+  log $ show $ index (1 : 2 : 3 : Nil) (-99)
+  log "test - !!"
+  log $ show $ (1 : 2 : 3 : Nil) !! 1
