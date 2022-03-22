@@ -1,14 +1,11 @@
 module Ch5 where
     
-import Prelude (Unit, (+), (-), (<), (>=), (/=), (==), show, discard, negate, type (~>))
+import Prelude (Unit, (+), (-), (<), (>=), (/=), (==), show, discard, negate, type (~>), (>), otherwise)
 
 import Effect (Effect)
 import Effect.Console (log)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-
-import Data.EuclideanRing (mod)
-import Data.HeytingAlgebra ((||))
 
 flip :: ∀ a b c. (a -> b -> c) -> b -> a -> c
 flip f x y = f y x
@@ -93,6 +90,50 @@ reverse l = go l Nil where
   go Nil ys = ys
   go (x : xs) ys = go xs (x : ys)
 
+concat :: ∀ a. List (List a) -> List a
+concat Nil = Nil
+concat (Nil : ls) = concat ls
+concat ((x : xs) : ls) = x : concat (xs : ls)
+
+filter :: ∀ a. (a -> Boolean) -> List a -> List a
+filter _ Nil = Nil
+filter predicate (x : xs) = if predicate x
+                            then x : filter predicate xs
+                            else filter predicate xs
+
+catMaybes :: ∀ a. List (Maybe a) -> List a
+catMaybes Nil = Nil
+catMaybes (x : xs) = case x of
+  Just y -> y : catMaybes xs
+  Nothing -> catMaybes xs
+
+range :: Int -> Int -> List Int
+range start target | start == target = singleton start
+                   | otherwise = start : range (start + if start < target then 1 else (-1)) target
+
+range2 :: Int -> Int -> List Int
+range2 start end = go (if start < end then 1 else (-1)) start where
+  go step start' | start' == end = singleton start'
+                | otherwise = start' : go step (start' + step)
+
+range3 :: Int -> Int -> List Int
+range3 start end = go start where
+  go start' | start' == end = singleton start'
+            | otherwise = start' : go (start' + step)
+  step = if start < end then 1 else (-1)
+
+range4 :: Int -> Int -> List Int
+range4 start end = go Nil start where
+  go rl start' | start' == end = start' : rl
+               | otherwise = go (start' : rl) (start' + step)
+  step = if start < end then 1 else (-1)
+
+range5 :: Int -> Int -> List Int
+range5 start end = go Nil end start where
+  go rl start' end' | start' == end' = start' : rl
+                    | otherwise = go (start' : rl) (start' + step) end'
+  step = if start < end then (-1) else 1
+
 test :: Effect Unit
 test = do
   log "test - const"
@@ -141,3 +182,24 @@ test = do
   log $ show $ findLastIndex (_ == 10) (11 : 12 : Nil)
   log "test - reverse"
   log $ show $ reverse (10 : 20 : 30 : Nil)
+  log "test - concat"
+  log $ show $ concat ((1 : 2 : 3 : Nil) : (4 : 5 : Nil) : (6 : Nil) : (Nil) : (Nil))
+  log "test - filter"
+  log $ show $ filter (4 > _) (1 : 2 : 3 : 4 : 5 : 6 : Nil)
+  log "test - catMaybes"
+  log $ show $ catMaybes (Just 1 : Nothing : Just 2 : Nothing : Nothing : Just 5 : Nil)
+  log "test - range"
+  log $ show $ range 1 10
+  log $ show $ range 3 (-3)
+  log "test - range2"
+  log $ show $ range2 1 10
+  log $ show $ range2 3 (-3)
+  log "test - range3"
+  log $ show $ range3 1 10
+  log $ show $ range3 3 (-3)
+  log "test - range4"
+  log $ show $ range4 1 10
+  log $ show $ range4 3 (-3)
+  log "test - range5"
+  log $ show $ range5 1 10
+  log $ show $ range5 3 (-3)
