@@ -1,11 +1,12 @@
 module Ch5 where
     
-import Prelude (Unit, (+), (-), (<), (>=), (/=), (==), show, discard, negate, type (~>), (>), otherwise)
+import Prelude (Unit, (+), (-), (<), (>=), (/=), (==), show, discard, negate, type (~>), (>), otherwise, (<<<), max, (>>>))
 
 import Effect (Effect)
 import Effect.Console (log)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..), snd, fst)
 
 flip :: ∀ a b c. (a -> b -> c) -> b -> a -> c
 flip f x y = f y x
@@ -134,6 +135,33 @@ range5 start end = go Nil end start where
                     | otherwise = go (start' : rl) (start' + step) end'
   step = if start < end then (-1) else 1
 
+take :: ∀ a. Int -> List a -> List a
+take n = reverse <<< go Nil (max 0 n) where
+  go nl _ Nil = nl
+  go nl 0 _ = nl
+  go nl n' (x : xs) = go (x : nl) (n' - 1) xs
+
+drop :: ∀ a. Int -> List a -> List a
+drop _ Nil = Nil
+drop 0 xs = xs
+drop i (_ : xs) = drop (i - 1) xs
+
+takeWhile :: ∀ a. (a -> Boolean) -> List a -> List a
+takeWhile pred = reverse <<< go Nil where
+  go nl Nil = nl
+  go nl (x : xs) | pred x = go (x : nl) xs
+                 | otherwise = nl
+
+dropWhile :: ∀ a. (a -> Boolean) -> List a -> List a
+dropWhile _ Nil = Nil
+dropWhile pred l @ (x : xs) | pred x = dropWhile pred xs
+                            | otherwise = l
+
+takeEnd :: ∀ a. Int -> List a -> List a
+takeEnd n = go >>> snd where
+  go Nil = Tuple 0 Nil
+  go (x : xs) = go xs # \(Tuple n' l') -> Tuple (n' + 1) (if n' < n then x : l' else l')
+
 test :: Effect Unit
 test = do
   log "test - const"
@@ -203,3 +231,18 @@ test = do
   log "test - range5"
   log $ show $ range5 1 10
   log $ show $ range5 3 (-3)
+  log "test - take"
+  log $ show $ take 5 (12 : 13 : 14 : Nil)
+  log $ show $ take 5 (-7 : 9 : 0 : 12 : -13 : 45 : 976 : -19 : Nil)
+  log "test - drop"
+  log $ show $ drop 2 (1 : 2 : 3 : 4 : 5 : 6 : 7 : Nil)
+  log $ show $ drop 10 (Nil :: List Unit)
+  log "test - takeWhile"
+  log $ show $ takeWhile (_ > 3) (5 : 4 : 3 : 99 : 101 : Nil)
+  log $ show $ takeWhile (_ == -17) (1 : 2 : 3 : Nil)
+  log "test - dropWhile"
+  log $ show $ dropWhile (_ > 3) (5 : 4 : 3 : 99 : 101 : Nil)
+  log $ show $ dropWhile (_ == -17) (1 : 2 : 3 : Nil)
+  log "test - takeEnd"
+  log $ show $ takeEnd 3 (1 : 2 : 3 : 4 : 5 : 6 : Nil)
+  log $ show $ takeEnd 10 (1 : Nil)
