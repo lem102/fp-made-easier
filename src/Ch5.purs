@@ -1,12 +1,12 @@
 module Ch5 where
     
-import Prelude (Unit, (+), (-), (<), (>=), (/=), (==), show, discard, negate, type (~>), (>), otherwise, (<<<), max, (>>>))
+import Prelude (Unit, (+), (-), (<), (>=), (/=), (==), show, discard, negate, type (~>), (>), otherwise, (<<<), max, (>>>), (||))
 
 import Effect (Effect)
 import Effect.Console (log)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..), snd, fst)
+import Data.Tuple (Tuple(..), fst, snd)
 
 flip :: ∀ a b c. (a -> b -> c) -> b -> a -> c
 flip f x y = f y x
@@ -162,6 +162,18 @@ takeEnd n = go >>> snd where
   go Nil = Tuple 0 Nil
   go (x : xs) = go xs # \(Tuple n' l') -> Tuple (n' + 1) (if n' < n then x : l' else l')
 
+dropEnd :: ∀ a. Int -> List a -> List a
+dropEnd n = go >>> snd where
+  go Nil = Tuple 0 Nil
+  go (x : xs) = go xs # \(Tuple n' l') -> Tuple (n' + 1) (if n' < n then l' else x : l')
+
+zip :: ∀ a b. List a -> List b -> List (Tuple a b)
+zip Nil _ = Nil
+zip _ Nil = Nil
+zip (x : xs) (y : ys) = Tuple x y : zip xs ys
+
+unzip :: ∀ a b. List (Tuple a b) -> Tuple (List a) (List b)
+  
 test :: Effect Unit
 test = do
   log "test - const"
@@ -246,3 +258,14 @@ test = do
   log "test - takeEnd"
   log $ show $ takeEnd 3 (1 : 2 : 3 : 4 : 5 : 6 : Nil)
   log $ show $ takeEnd 10 (1 : Nil)
+  log "test - dropEnd"
+  log $ show $ dropEnd 3 (1 : 2 : 3 : 4 : 5 : 6 : Nil)
+  log $ show $ dropEnd 10 (1 : Nil)
+  log "test - zip"
+  log $ show $ zip (1 : 2 : 3 : Nil) ("a" : "b" : "c" : "d" : "e" : Nil)
+  log $ show $ zip ("a" : "b" : "c" : "d" : "e" : Nil) (1 : 2 : 3 : Nil)
+  log $ show $ zip (Nil :: List Unit) (1 : 2 : Nil)
+  log "test - unzip"
+  log $ show $ unzip ((Tuple 1 "a") : (Tuple 2 "b") : (Tuple 3 "c") : Nil)
+  log $ show $ unzip ((Tuple "a" 1) : (Tuple "b" 2) : (Tuple "c" 3) : Nil)
+  log $ show $ unzip (Nil :: List (Tuple Unit Unit))
