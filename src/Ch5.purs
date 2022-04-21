@@ -173,6 +173,8 @@ zip _ Nil = Nil
 zip (x : xs) (y : ys) = Tuple x y : zip xs ys
 
 unzip :: ∀ a b. List (Tuple a b) -> Tuple (List a) (List b)
+unzip Nil = Tuple Nil Nil
+unzip (Tuple x y : ts) = unzip ts # \(Tuple xs ys) -> Tuple (x : xs) (y : ys)
   
 test :: Effect Unit
 test = do
